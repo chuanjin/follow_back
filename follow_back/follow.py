@@ -13,18 +13,42 @@ headers = {
 }
 
 def get_followers(github_username):
-    """Fetch the list of followers for the specified GitHub user."""
+    """Fetch the complete list of followers for the specified GitHub user."""
+    followers = []
     url = f'{BASE_URL}users/{github_username}/followers'
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
-    return response.json()
+    page = 1
+
+    while True:
+        response = requests.get(url, headers=headers, params={'page': page, 'per_page': 100})
+        response.raise_for_status()
+        data = response.json()
+        
+        if not data:
+            break
+        
+        followers.extend(data)
+        page += 1
+
+    return followers
 
 def get_following(github_username):
-    """Fetch the list of users the specified GitHub user is following."""
+    """Fetch the complete list of users the specified GitHub user is following."""
+    following = []
     url = f'{BASE_URL}users/{github_username}/following'
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
-    return response.json()
+    page = 1
+
+    while True:
+        response = requests.get(url, headers=headers, params={'page': page, 'per_page': 100})
+        response.raise_for_status()
+        data = response.json()
+
+        if not data:
+            break
+
+        following.extend(data)
+        page += 1
+
+    return following
 
 def get_user_followers_count(username):
     """Fetch the number of followers for a specific user."""
@@ -40,16 +64,21 @@ def follow_user(username):
     response = requests.put(url, headers=headers)
     if response.status_code == 204:
         print(f'Successfully followed {username}')
+    elif response.status_code == 429:
+        print(f'Rate limit exceeded. Pausing...')
+        time.sleep(60)  # Wait a minute if rate limited
+        follow_user(username)  # Retry following the user
     else:
-        print(f'Failed to follow {username}. Status Code: {response.status_code}')
+        print(f'Failed to follow {username}. Status Code: {response.status_code} - {response.text}')
 
 def follow_back(github_username, min_followers):
     """Follow back all followers who meet the minimum followers criteria."""
     followers = get_followers(github_username)
     following = get_following(github_username)
 
-    followers_usernames = {user['login'] for user in followers}
-    following_usernames = {user['login'] for user in following}
+    # Normalize usernames to lower case to handle case-sensitivity issues
+    followers_usernames = {user['login'].lower() for user in followers}
+    following_usernames = {user['login'].lower() for user in following}
 
     not_following_back = followers_usernames - following_usernames
 
