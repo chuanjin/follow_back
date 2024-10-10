@@ -1,6 +1,6 @@
 # Follow Back Bot
 
-This is a Python script that automatically follows back your GitHub followers who have more than a specified number of followers. The script leverages the GitHub API to fetch your followers, check their follower counts, and follow them back if they meet the criteria.
+This is a Python script that automatically follows back your GitHub followers who have more than a specified number of followers. The script leverages the GitHub API to fetch your followers, check their follower counts, and follow them back if they meet the criteria. The script will be triggered in Github Actions by a nightly build configured with cron.
 
 ## Features
 
