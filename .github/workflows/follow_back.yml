@@ -29,6 +29,6 @@ jobs:
         run: poetry install
 
       - name: Run follow_back script
-        run: poetry run python follow_back/follow.py ${{ github.repository_owner }} 200
+        run: poetry run python follow_back/follow.py ${{ github.repository_owner }} 200 100
         env:
           USER_TOKEN: ${{ secrets.USER_TOKEN }}

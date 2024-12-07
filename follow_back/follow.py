@@ -12,6 +12,33 @@ headers = {
     'Accept': 'application/vnd.github.v3+json'
 }
 
+
+def get_user_repos(username):
+    """Fetch all public repositories of a user."""
+    repos = []
+    url = f'{BASE_URL}users/{username}/repos'
+    page = 1
+
+    while True:
+        response = requests.get(url, headers=headers, params={'page': page, 'per_page': 100})
+        response.raise_for_status()
+        data = response.json()
+
+        if not data:
+            break
+
+        repos.extend(data)
+        page += 1
+
+    return repos
+
+def get_total_stars(username):
+    """Calculate the total stars across all repositories of a user."""
+    repos = get_user_repos(username)
+    total_stars = sum(repo['stargazers_count'] for repo in repos)
+    return total_stars
+
+
 def get_followers(github_username):
     """Fetch the complete list of followers for the specified GitHub user."""
     followers = []
@@ -71,8 +98,9 @@ def follow_user(username):
     else:
         print(f'Failed to follow {username}. Status Code: {response.status_code} - {response.text}')
 
-def follow_back(github_username, min_followers):
-    """Follow back all followers who meet the minimum followers criteria."""
+
+def follow_back(github_username, min_followers, min_stars):
+    """Follow back all followers who meet the minimum followers and stars criteria."""
     followers = get_followers(github_username)
     following = get_following(github_username)
 
@@ -85,20 +113,31 @@ def follow_back(github_username, min_followers):
     for username in not_following_back:
         followers_count = get_user_followers_count(username)
         print(f'{username} has {followers_count} followers.')
-        
-        if followers_count > min_followers:
-            follow_user(username)
+
+        if followers_count >= min_followers:
+            total_stars = get_total_stars(username)
+            print(f'{username} has {total_stars} total stars.')
+
+            if total_stars >= min_stars:
+                follow_user(username)
+            else:
+                print(f'Skipping {username} (less than {min_stars} stars)')
         else:
             print(f'Skipping {username} (less than {min_followers} followers)')
         
         # Sleep to avoid hitting API rate limits
         time.sleep(1)
 
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Follow back your GitHub followers who have more than a specified number of followers.')
+
+    parser = argparse.ArgumentParser(
+        description='Follow back your GitHub followers who meet the specified criteria.'
+    )
     parser.add_argument('github_username', type=str, help='Your GitHub username.')
-    parser.add_argument('min_followers', type=int, help='Minimum number of followers a user must have to be followed back.')
+    parser.add_argument('min_followers', type=int, help='Minimum number of followers a user must have.')
+    parser.add_argument('min_stars', type=int, help='Minimum number of total stars a user must have.')
 
     args = parser.parse_args()
 
-    follow_back(args.github_username, args.min_followers)
+    follow_back(args.github_username, args.min_followers, args.min_stars)
