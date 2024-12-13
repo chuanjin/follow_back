@@ -115,6 +115,7 @@ def follow_back(github_username, min_followers, min_stars):
             print(f'{username} has {total_stars} total stars.')
 
             if total_stars >= min_stars:
+                print(f'Following user {username} with {followers_count} followers and {total_stars} stars!')
                 follow_user(username)
             else:
                 print(f'Skipping {username} (less than {min_stars} stars)')
